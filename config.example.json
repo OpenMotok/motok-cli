@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "language": "en",
+  "channels": {
+    "claude": {
+      "api_key_env": "ANTHROPIC_API_KEY",
+      "provider": "anthropic"
+    },
+    "openai": {
+      "api_key_env": "OPENAI_API_KEY",
+      "max_tokens_field": "max_completion_tokens",
+      "provider": "openai"
+    },
+    "media": {
+      "base_url": "http://127.0.0.1:8092/v1",
+      "api_key_env": "NMODEL_API_KEY",
+      "base_url_env": "NMODEL_BASE_URL",
+      "provider": "openai"
+    }
+  },
+  "routes": {
+    "text": {
+      "model": "your-text-model",
+      "channel": "claude"
+    },
+    "image": {
+      "model": "your-image-model",
+      "channel": "openai"
+    },
+    "video": {
+      "model": "your-video-model",
+      "channel": "media"
+    }
+  }
+}

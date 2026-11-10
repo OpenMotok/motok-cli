@@ -1,0 +1,31 @@
+version: 1
+language: en
+
+# Channel names are arbitrary; provider selects the request protocol.
+channels:
+  claude:
+    provider: anthropic
+    base_url: https://api.anthropic.com/v1
+    api_key_env: ANTHROPIC_API_KEY
+  openai:
+    provider: openai
+    base_url: https://api.openai.com/v1
+    api_key_env: OPENAI_API_KEY
+    max_tokens_field: max_completion_tokens
+  media:
+    provider: openai
+    base_url: http://127.0.0.1:8092/v1
+    api_key_env: NMODEL_API_KEY
+    base_url_env: NMODEL_BASE_URL
+
+# routes.channel references a channel name.
+routes:
+  text:
+    channel: claude
+    model: your-text-model
+  image:
+    channel: openai
+    model: your-image-model
+  video:
+    channel: media
+    model: your-video-model

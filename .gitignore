@@ -1,0 +1,6 @@
+bin/
+dist/
+.env*
+nmodel.config.json
+nmodel.config.yaml
+nmodel.config.yml
