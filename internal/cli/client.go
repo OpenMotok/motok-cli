@@ -103,7 +103,7 @@ func saveStream(path string, r io.Reader) error {
 	if err := os.MkdirAll(dir, 0700); err != nil {
 		return failure("output_write", "cannot create output directory")
 	}
-	f, err := os.CreateTemp(dir, ".nmodel-*")
+	f, err := os.CreateTemp(dir, ".motok-*")
 	if err != nil {
 		return failure("output_write", "cannot create temporary output")
 	}

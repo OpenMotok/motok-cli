@@ -21,7 +21,7 @@ func envConfig(t *testing.T, c Config) map[string]string {
 	if err := writeConfig(path, c); err != nil {
 		t.Fatal(err)
 	}
-	return map[string]string{"NMODEL_CONFIG": path}
+	return map[string]string{"MOTOK_CONFIG": path}
 }
 func runTest(t *testing.T, env map[string]string, input string, args ...string) (int, string, string) {
 	t.Helper()
@@ -107,7 +107,7 @@ func TestConfigPrecedenceAndProviderIsolation(t *testing.T) {
 }
 func TestConfigInitAndRedaction(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "private", "config.json")
-	env := map[string]string{"NMODEL_CONFIG": path}
+	env := map[string]string{"MOTOK_CONFIG": path}
 	code, _, errOut := runTest(t, env, "", "config", "init")
 	if code != 0 {
 		t.Fatal(errOut)
@@ -404,7 +404,7 @@ func TestCapabilityRoutingAndSharedChannelModels(t *testing.T) {
 	env := envConfig(t, c)
 	env["CLAUDE_KEY"] = "claude-key"
 	env["MEDIA_KEY"] = "media-key"
-	env["NMODEL_API_KEY"] = "must-not-override"
+	env["MOTOK_API_KEY"] = "must-not-override"
 	for _, args := range [][]string{
 		{"text", "generate", "--prompt", "hello"},
 		{"image", "generate", "--prompt", "cat", "--json"},

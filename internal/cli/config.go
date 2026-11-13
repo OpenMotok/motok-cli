@@ -38,7 +38,7 @@ type resolved struct {
 }
 
 func configPath(getenv func(string) string) (string, error) {
-	if p := getenv("NMODEL_CONFIG"); p != "" {
+	if p := getenv("MOTOK_CONFIG"); p != "" {
 		return p, nil
 	}
 	root, err := os.UserConfigDir()
@@ -46,12 +46,12 @@ func configPath(getenv func(string) string) (string, error) {
 		return "", failure("config_path", "cannot locate the user configuration directory")
 	}
 	for _, name := range []string{"config.yaml", "config.yml", "config.json"} {
-		path := filepath.Join(root, "nmodel", name)
+		path := filepath.Join(root, "motok", name)
 		if _, err := os.Stat(path); err == nil || !errors.Is(err, os.ErrNotExist) {
 			return path, nil
 		}
 	}
-	return filepath.Join(root, "nmodel", "config.yaml"), nil
+	return filepath.Join(root, "motok", "config.yaml"), nil
 }
 func readConfig(path string) (Config, error) {
 	c := Config{Version: 1}
@@ -113,7 +113,7 @@ func resolve(c Config, kind string, getenv func(string) string) (resolved, error
 	if route.Model != "" {
 		p.Model = route.Model
 	}
-	if model := getenv("NMODEL_" + strings.ToUpper(kind) + "_MODEL"); model != "" {
+	if model := getenv("MOTOK_" + strings.ToUpper(kind) + "_MODEL"); model != "" {
 		p.Model = model
 	}
 	defaults := map[string][3]string{
@@ -203,7 +203,7 @@ func exampleConfig() Config {
 	c.Language = "en"
 	c.Channels["claude"] = Channel{Provider: "anthropic", APIKeyEnv: "ANTHROPIC_API_KEY"}
 	c.Channels["gemini"] = Channel{Provider: "gemini", APIKeyEnv: "GEMINI_API_KEY"}
-	c.Channels["media"] = Channel{Provider: "openai", BaseURL: "http://127.0.0.1:8092/v1", APIKeyEnv: "NMODEL_API_KEY", BaseURLEnv: "NMODEL_BASE_URL"}
+	c.Channels["media"] = Channel{Provider: "openai", BaseURL: "http://127.0.0.1:8092/v1", APIKeyEnv: "MOTOK_API_KEY", BaseURLEnv: "MOTOK_BASE_URL"}
 	c.Routes["video"] = Route{Channel: "media"}
 	return c
 }

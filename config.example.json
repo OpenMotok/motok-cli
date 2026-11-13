@@ -13,8 +13,8 @@
     },
     "media": {
       "base_url": "http://127.0.0.1:8092/v1",
-      "api_key_env": "NMODEL_API_KEY",
-      "base_url_env": "NMODEL_BASE_URL",
+      "api_key_env": "MOTOK_API_KEY",
+      "base_url_env": "MOTOK_BASE_URL",
       "provider": "openai"
     }
   },

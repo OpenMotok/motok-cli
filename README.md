@@ -1,4 +1,4 @@
-# NModel CLI
+# Motok.ai CLI
 
 An independent Go project for calling official model APIs and compatible gateways.
 No backend process, database or Node.js is required.
@@ -11,30 +11,30 @@ Inspired by [flatkey-cli](https://github.com/flatkey-ai/flatkey-cli).
 Development requires Go 1.26.1 or later. Run from this directory:
 
 ```sh
-go build -trimpath -o bin/nmodel ./cmd/nmodel
-./bin/nmodel help
+go build -trimpath -o bin/motok ./cmd/motok
+./bin/motok help
 ```
 
 Release users download a prebuilt binary; Go is not required. macOS and Linux:
 
 ```sh
-NMODEL_RELEASE_BASE_URL=https://your-release-host/v0.1.0 sh install.sh --version v0.1.0
+MOTOK_RELEASE_BASE_URL=https://your-release-host/v0.1.0 sh install.sh --version v0.1.0
 ```
 
 The URL must point to your real release directory containing the matching archive
 and `SHA256SUMS`. A public release host is not configured or published by this
 project. The installer downloads over HTTPS, verifies SHA-256 and installs to the
-user's local bin directory without sudo. Use `--bin-dir` or `NMODEL_BIN_DIR` to
+user's local bin directory without sudo. Use `--bin-dir` or `MOTOK_BIN_DIR` to
 change the destination. Add that directory to PATH if needed. Windows users
 extract the matching ZIP, verify its SHA-256 against `SHA256SUMS`, and add
-`nmodel.exe` to PATH.
+`motok.exe` to PATH.
 
 Build all release archives and install one locally:
 
 ```sh
 sh scripts/build-release.sh v0.1.0
 sh install.sh --from-dir ./dist --version v0.1.0
-nmodel --version
+motok --version
 ```
 
 The release builder produces macOS, Linux and Windows archives for AMD64 and
@@ -49,8 +49,8 @@ API keys and URLs come **only** from configuration and environment variables.
 There are no profiles, `--profile`, `--api-key` or `--base-url` arguments.
 
 ```sh
-nmodel config init
-nmodel config show
+motok config init
+motok config show
 ```
 
 `config init` creates a private YAML file (0600) without overwriting existing files.
@@ -60,13 +60,13 @@ duplicate YAML keys and multiple documents are rejected. `version` defaults to 1
 when omitted.
 
 The default location is the OS user configuration directory under
-`nmodel/config.yaml`. Automatic discovery checks `config.yaml`, then `config.yml`,
-then the existing `config.json` for compatibility. Explicit `NMODEL_CONFIG` takes
+`motok/config.yaml`. Automatic discovery checks `config.yaml`, then `config.yml`,
+then the existing `config.json` for compatibility. Explicit `MOTOK_CONFIG` takes
 precedence. Select another file with:
 
 ```sh
-export NMODEL_CONFIG=./nmodel.config.yaml
-nmodel config init
+export MOTOK_CONFIG=./motok.config.yaml
+motok config init
 ```
 
 Configure named **channels** with their protocol and credentials, then map each
@@ -90,8 +90,8 @@ channels:
   media:
     provider: openai
     base_url: http://127.0.0.1:8092/v1
-    api_key_env: NMODEL_API_KEY
-    base_url_env: NMODEL_BASE_URL
+    api_key_env: MOTOK_API_KEY
+    base_url_env: MOTOK_BASE_URL
 
 # routes.channel references a channel name.
 routes:
@@ -123,10 +123,10 @@ channel. Model discovery lists the selected channel's models; it does not infer
 which models support a modality. Generation commands reject a conflicting `--type`.
 
 ```sh
-nmodel models --type image --json
-nmodel auth status --type video
-nmodel text generate --prompt "Hello"
-nmodel image generate --prompt "A watercolor cat" -o cat.png
+motok models --type image --json
+motok auth status --type video
+motok text generate --prompt "Hello"
+motok image generate --prompt "A watercolor cat" -o cat.png
 ```
 
 Set each channel's key privately through its referenced environment variable, or
@@ -139,15 +139,15 @@ Precedence:
 1. Channel and protocol: the capability's `routes` entry selects a `channels` entry.
 2. API key: nonempty `api_key_env` value, then channel `api_key`.
 3. URL: nonempty `base_url_env` value, then channel `base_url`, then protocol default.
-4. Model: `--model`, then `NMODEL_TEXT_MODEL` / `NMODEL_IMAGE_MODEL` /
-   `NMODEL_VIDEO_MODEL`, then route `model`, then channel `model`.
-5. Language: `--lang`, then `NMODEL_LANG`, then configuration, then English.
+4. Model: `--model`, then `MOTOK_TEXT_MODEL` / `MOTOK_IMAGE_MODEL` /
+   `MOTOK_VIDEO_MODEL`, then route `model`, then channel `model`.
+5. Language: `--lang`, then `MOTOK_LANG`, then configuration, then English.
 
 Omitted environment-variable references use the selected protocol's standard
 variables: `OPENAI_API_KEY` / `OPENAI_BASE_URL`, `ANTHROPIC_API_KEY` /
 `ANTHROPIC_BASE_URL`, or `GEMINI_API_KEY` / `GEMINI_BASE_URL`. To isolate multiple
 channels using the same protocol, give each a distinct `api_key_env` and
-`base_url_env`. `NMODEL_API_KEY` and `NMODEL_BASE_URL` only apply to channels
+`base_url_env`. `MOTOK_API_KEY` and `MOTOK_BASE_URL` only apply to channels
 explicitly referencing those variables. Credentials never fall back across protocols.
 
 Without a configuration file, all three routes use a default OpenAI channel and
@@ -165,19 +165,19 @@ and Gemini use their native fields.
 ## Commands
 
 ```sh
-nmodel auth status
-nmodel login
-nmodel models --json
-nmodel text generate --prompt "Hello"
-nmodel text generate --model your-model --prompt "Hello"
-nmodel response generate --prompt "Hello" --json
-nmodel image generate --prompt "A watercolor cat" -o cat.png
-nmodel image edit --prompt "Add a blue background" --file cat.png -o edited.png
-nmodel video generate --model your-video-model --prompt "A cat walking" --wait -o cat.mp4
-nmodel video status TASK_ID
-nmodel video download TASK_ID -o cat.mp4
-nmodel help --lang zh
-nmodel help --ai
+motok auth status
+motok login
+motok models --json
+motok text generate --prompt "Hello"
+motok text generate --model your-model --prompt "Hello"
+motok response generate --prompt "Hello" --json
+motok image generate --prompt "A watercolor cat" -o cat.png
+motok image edit --prompt "Add a blue background" --file cat.png -o edited.png
+motok video generate --model your-video-model --prompt "A cat walking" --wait -o cat.mp4
+motok video status TASK_ID
+motok video download TASK_ID -o cat.mp4
+motok help --lang zh
+motok help --ai
 ```
 
 `login` validates the configured key using the model-list endpoint; it does not
@@ -195,7 +195,7 @@ health check. `status` performs the same key validation as `login`.
 | Native JSON requests | Yes | Yes | Yes |
 
 Video commands target the compatible `/videos` contract already exposed by
-NModel. They are not adapters for Ark, Veo or other native video job schemas.
+Motok.ai. They are not adapters for Ark, Veo or other native video job schemas.
 The official OpenAI Videos API was shut down on September 24, 2026, so video
 helpers reject `api.openai.com`; use a video-capable compatible service instead.
 See the [official API reference](https://developers.openai.com/api/reference/resources/videos/methods/create).
@@ -206,11 +206,11 @@ authorization flow.
 ## Scripts and agents
 
 ```sh
-nmodel image generate --prompt "A watercolor cat" --dry-run --json
-nmodel text generate --prompt - --json
-nmodel request POST /embeddings --data request.json --json
-nmodel request POST /messages --type text --data message.json --json
-nmodel request POST /audio/speech --data speech.json -o speech.mp3
+motok image generate --prompt "A watercolor cat" --dry-run --json
+motok text generate --prompt - --json
+motok request POST /embeddings --data request.json --json
+motok request POST /messages --type text --data message.json --json
+motok request POST /audio/speech --data speech.json -o speech.mp3
 ```
 
 `request` uses an endpoint relative to the configured API prefix, its native
@@ -240,7 +240,7 @@ jobs. The CLI never automatically retries generation POST requests.
 ```sh
 go test -race ./...
 go vet ./...
-go build -o bin/nmodel ./cmd/nmodel
+go build -o bin/motok ./cmd/motok
 sh -n install.sh scripts/build-release.sh
 ```
 

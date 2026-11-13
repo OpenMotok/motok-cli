@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"nmodel.ai/cli/internal/cli"
+	"motok.ai/cli/internal/cli"
 	"os"
 	"os/signal"
 )

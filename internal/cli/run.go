@@ -59,7 +59,7 @@ func Run(ctx context.Context, args []string, in io.Reader, out, errOut io.Writer
 	return 1
 }
 func (a *app) parse(args []string) ([]string, error) {
-	f := flag.NewFlagSet("nmodel", flag.ContinueOnError)
+	f := flag.NewFlagSet("motok", flag.ContinueOnError)
 	f.SetOutput(io.Discard)
 	f.StringVar(&a.opts.kind, "type", "", "text, image or video")
 	f.StringVar(&a.opts.lang, "lang", "", "en or zh")
@@ -98,7 +98,7 @@ func (a *app) parse(args []string) ([]string, error) {
 		name := strings.TrimLeft(strings.SplitN(arg, "=", 2)[0], "-")
 		option := f.Lookup(name)
 		if option == nil {
-			optionError = failure("option_unknown", "unknown option; use nmodel help (credentials and URLs belong in config or environment)")
+			optionError = failure("option_unknown", "unknown option; use motok help (credentials and URLs belong in config or environment)")
 			continue
 		}
 		flags = append(flags, arg)
@@ -131,7 +131,7 @@ func (a *app) parse(args []string) ([]string, error) {
 }
 func (a *app) run(ctx context.Context, cmd []string) error {
 	if a.opts.lang == "" {
-		a.opts.lang = a.getenv("NMODEL_LANG")
+		a.opts.lang = a.getenv("MOTOK_LANG")
 	}
 	if a.opts.version {
 		return a.print(map[string]string{"version": Version}, Version)
@@ -154,7 +154,7 @@ func (a *app) run(ctx context.Context, cmd []string) error {
 		return err
 	}
 	if a.opts.lang == "" {
-		a.opts.lang = a.getenv("NMODEL_LANG")
+		a.opts.lang = a.getenv("MOTOK_LANG")
 		if a.opts.lang == "" {
 			a.opts.lang = c.Language
 		}
@@ -258,7 +258,7 @@ func (a *app) run(ctx context.Context, cmd []string) error {
 	if len(cmd) == 3 && cmd[0] == "request" {
 		return a.raw(ctx, cmd[1], cmd[2])
 	}
-	return failure("command_unknown", "unknown command; use nmodel help")
+	return failure("command_unknown", "unknown command; use motok help")
 }
 func (a *app) localized(en, zh string) string {
 	if a.opts.lang == "zh" {
@@ -294,58 +294,58 @@ func (a *app) help() error {
 	}
 
 	if a.opts.json || a.opts.ai {
-		return a.print(map[string]any{"name": "nmodel", "version": Version, "commands": []string{"config init", "config show", "auth status", "login", "models", "text generate", "response generate", "image generate", "image edit", "video generate", "video status ID", "video download ID", "request METHOD /endpoint"}, "auth": "Configuration file and environment variables only; no credentials in command flags.", "options": []string{"--type text|image|video", "--model ID", "--prompt TEXT|-", "--output FILE", "--file FILE", "--data FILE|-", "--size SIZE", "--seconds N", "--wait", "--poll-interval 10s", "--timeout 10m", "--json", "--dry-run", "--lang en|zh"}}, "")
+		return a.print(map[string]any{"name": "motok", "version": Version, "commands": []string{"config init", "config show", "auth status", "login", "models", "text generate", "response generate", "image generate", "image edit", "video generate", "video status ID", "video download ID", "request METHOD /endpoint"}, "auth": "Configuration file and environment variables only; no credentials in command flags.", "options": []string{"--type text|image|video", "--model ID", "--prompt TEXT|-", "--output FILE", "--file FILE", "--data FILE|-", "--size SIZE", "--seconds N", "--wait", "--poll-interval 10s", "--timeout 10m", "--json", "--dry-run", "--lang en|zh"}}, "")
 	}
-	text := `NModel CLI — direct official APIs and compatible gateways
+	text := `Motok.ai CLI — direct official APIs and compatible gateways
 
-  nmodel config init                       Create a private example configuration
-  nmodel config show                       Show configuration with keys redacted
-  nmodel auth status                       Show configured connection without networking
-  nmodel login                             Validate configured API key via model discovery
-  nmodel models                            List models available to the configured key
-  nmodel text generate --prompt "Hello"     Generate text
-  nmodel response generate --prompt "Hi"    OpenAI Responses API
-  nmodel image generate --prompt "A cat" -o cat.png
-  nmodel image edit --prompt "Watercolor" --file source.png -o edited.png
-  nmodel video generate --prompt "A cat" --wait -o cat.mp4
-  nmodel video status TASK_ID
-  nmodel video download TASK_ID -o cat.mp4
-  nmodel request POST /embeddings --data request.json --json
+  motok config init                       Create a private example configuration
+  motok config show                       Show configuration with keys redacted
+  motok auth status                       Show configured connection without networking
+  motok login                             Validate configured API key via model discovery
+  motok models                            List models available to the configured key
+  motok text generate --prompt "Hello"     Generate text
+  motok response generate --prompt "Hi"    OpenAI Responses API
+  motok image generate --prompt "A cat" -o cat.png
+  motok image edit --prompt "Watercolor" --file source.png -o edited.png
+  motok video generate --prompt "A cat" --wait -o cat.mp4
+  motok video status TASK_ID
+  motok video download TASK_ID -o cat.mp4
+  motok request POST /embeddings --data request.json --json
 
-Configuration: NMODEL_CONFIG or the user config directory / nmodel / config.yaml.
+Configuration: MOTOK_CONFIG or the user config directory / motok / config.yaml.
 Keys and URLs come only from config and environment. Commands select channels automatically using routes.text/image/video.
-Providers: openai (also NModel / compatible services), anthropic, gemini.
+Providers: openai (also Motok.ai / compatible services), anthropic, gemini.
 Set a model on a route/channel or use --model. Model availability depends on the service.
 Options: --type text|image|video --json --dry-run --lang en|zh --timeout 10m
 Video options: --seconds N --size WIDTHxHEIGHT --wait --poll-interval 10s
 --prompt - and --data - read standard input. Output files are never overwritten.
-Use nmodel help --ai for machine-readable command discovery.
+Use motok help --ai for machine-readable command discovery.
 `
 	if a.opts.lang == "zh" {
-		text = `NModel 命令行 — 直连官方 API 与兼容网关
+		text = `Motok.ai 命令行 — 直连官方 API 与兼容网关
 
-  nmodel config init                       生成权限受限的示例配置
-  nmodel config show                       查看配置（隐藏密钥）
-  nmodel auth status                       查看当前配置，不发送请求
-  nmodel login                             使用模型列表接口验证密钥
-  nmodel models                            列出可用模型
-  nmodel text generate --prompt "你好"      生成文本
-  nmodel response generate --prompt "你好"  调用 OpenAI Responses
-  nmodel image generate --prompt "一只猫" -o cat.png
-  nmodel image edit --prompt "改成水彩" --file source.png -o edited.png
-  nmodel video generate --prompt "一只猫" --wait -o cat.mp4
-  nmodel video status TASK_ID
-  nmodel video download TASK_ID -o cat.mp4
-  nmodel request POST /embeddings --data request.json --json
+  motok config init                       生成权限受限的示例配置
+  motok config show                       查看配置（隐藏密钥）
+  motok auth status                       查看当前配置，不发送请求
+  motok login                             使用模型列表接口验证密钥
+  motok models                            列出可用模型
+  motok text generate --prompt "你好"      生成文本
+  motok response generate --prompt "你好"  调用 OpenAI Responses
+  motok image generate --prompt "一只猫" -o cat.png
+  motok image edit --prompt "改成水彩" --file source.png -o edited.png
+  motok video generate --prompt "一只猫" --wait -o cat.mp4
+  motok video status TASK_ID
+  motok video download TASK_ID -o cat.mp4
+  motok request POST /embeddings --data request.json --json
 
-配置路径：NMODEL_CONFIG 或用户配置目录中的 nmodel/config.yaml。
+配置路径：MOTOK_CONFIG 或用户配置目录中的 motok/config.yaml。
 API Key 和 URL 仅从配置文件与环境变量读取，通过 routes.text/image/video 自动选择渠道。
-协议：openai（含 NModel 和兼容服务）、anthropic、gemini。
+协议：openai（含 Motok.ai 和兼容服务）、anthropic、gemini。
 模型在 routes 或 channels 中设置，或使用 --model；可用能力取决于实际服务。
 选项：--type text|image|video --json --dry-run --lang en|zh --timeout 10m
 视频：--seconds N --size WIDTHxHEIGHT --wait --poll-interval 10s
 --prompt -、--data - 从标准输入读取；输出文件不会覆盖已有文件。
-使用 nmodel help --ai 获取机器可读说明。
+使用 motok help --ai 获取机器可读说明。
 `
 	}
 	_, err := io.WriteString(a.out, text)

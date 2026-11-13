@@ -1,4 +1,4 @@
-module nmodel.ai/cli
+module motok.ai/cli
 
 go 1.26.1
 

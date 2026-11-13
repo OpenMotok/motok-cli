@@ -44,7 +44,7 @@ func chineseError(e *cliError) string {
 		"option_value":           "选项缺少参数值。",
 		"option_invalid":         "选项值或组合无效，请查看 help。",
 		"language_invalid":       "语言必须为 en 或 zh。",
-		"command_unknown":        "未知命令，请使用 nmodel help 查看用法。",
+		"command_unknown":        "未知命令，请使用 motok help 查看用法。",
 		"operation_failed":       "操作失败。",
 	}
 	if e.Code == "api_error" {

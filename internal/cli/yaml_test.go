@@ -44,7 +44,7 @@ routes:
 	if err != nil || r.APIKey != "environment-value" || r.BaseURL != "https://example.com/proxy/v1" {
 		t.Fatal("YAML environment override failed", err)
 	}
-	env := map[string]string{"NMODEL_CONFIG": path}
+	env := map[string]string{"MOTOK_CONFIG": path}
 	for _, args := range [][]string{{"config", "show"}, {"config", "show", "--json"}} {
 		code, out, errors := runTest(t, env, "", args...)
 		if code != 0 || strings.Contains(out, "private-test-value") || !strings.Contains(out, "REDACTED") {
@@ -79,7 +79,7 @@ func TestYAMLInitRoundTripAndExistingFile(t *testing.T) {
 	for _, extension := range []string{"yaml", "yml", "json"} {
 		t.Run(extension, func(t *testing.T) {
 			path := filepath.Join(t.TempDir(), "config."+extension)
-			env := map[string]string{"NMODEL_CONFIG": path}
+			env := map[string]string{"MOTOK_CONFIG": path}
 			code, _, errors := runTest(t, env, "", "config", "init")
 			if code != 0 {
 				t.Fatal(errors)
@@ -115,7 +115,7 @@ func TestDefaultConfigDiscoveryPrefersYAMLAndRetainsJSON(t *testing.T) {
 	if err != nil || filepath.Base(path) != "config.yaml" {
 		t.Fatal("default must use YAML", err)
 	}
-	dir := filepath.Join(root, "nmodel")
+	dir := filepath.Join(root, "motok")
 	if err = os.MkdirAll(dir, 0700); err != nil {
 		t.Fatal(err)
 	}
@@ -144,7 +144,7 @@ func TestDefaultConfigDiscoveryPrefersYAMLAndRetainsJSON(t *testing.T) {
 		t.Fatal("YAML config precedence failed")
 	}
 	path, _ = configPath(func(key string) string {
-		if key == "NMODEL_CONFIG" {
+		if key == "MOTOK_CONFIG" {
 			return legacy
 		}
 		return ""
@@ -182,7 +182,7 @@ routes:
 	if err != nil || r.ChannelName != "company-proxy" || r.Protocol != "anthropic" || r.Model != "custom-model" {
 		t.Fatal("protocol and channel reference were confused", err)
 	}
-	env := map[string]string{"NMODEL_CONFIG": path}
+	env := map[string]string{"MOTOK_CONFIG": path}
 	code, out, errors := runTest(t, env, "", "text", "generate", "--prompt", "hello", "--dry-run", "--json")
 	if code != 0 {
 		t.Fatal(errors)

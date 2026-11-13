@@ -1,6 +1,6 @@
 bin/
 dist/
 .env*
-nmodel.config.json
-nmodel.config.yaml
-nmodel.config.yml
+motok.config.json
+motok.config.yaml
+motok.config.yml
