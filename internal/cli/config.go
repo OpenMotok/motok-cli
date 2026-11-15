@@ -22,6 +22,30 @@ type Channel struct {
 	Model          string `json:"model,omitempty" yaml:"model,omitempty"`
 	MaxTokensField string `json:"max_tokens_field,omitempty" yaml:"max_tokens_field,omitempty"`
 }
+
+// channelFields encodes a Channel with an always-present api_key so new files
+// show where to paste a key. envKeyChannel drops the empty api_key when the key
+// comes from api_key_env, so the file does not suggest storing it in plain text.
+type channelFields Channel
+type envKeyChannel struct {
+	Protocol       string `json:"protocol,omitempty" yaml:"protocol,omitempty"`
+	BaseURL        string `json:"base_url,omitempty" yaml:"base_url,omitempty"`
+	BaseURLEnv     string `json:"base_url_env,omitempty" yaml:"base_url_env,omitempty"`
+	APIKey         string `json:"api_key,omitempty" yaml:"api_key,omitempty"`
+	APIKeyEnv      string `json:"api_key_env,omitempty" yaml:"api_key_env,omitempty"`
+	Model          string `json:"model,omitempty" yaml:"model,omitempty"`
+	MaxTokensField string `json:"max_tokens_field,omitempty" yaml:"max_tokens_field,omitempty"`
+}
+
+func (c Channel) encoded() any {
+	if c.APIKey == "" && c.APIKeyEnv != "" {
+		return envKeyChannel(c)
+	}
+	return channelFields(c)
+}
+func (c Channel) MarshalYAML() (any, error)    { return c.encoded(), nil }
+func (c Channel) MarshalJSON() ([]byte, error) { return json.Marshal(c.encoded()) }
+
 type Route struct {
 	Channel string `json:"channel" yaml:"channel"`
 	Model   string `json:"model,omitempty" yaml:"model,omitempty"`
@@ -198,6 +222,13 @@ func writeConfig(path string, c Config) error {
 func defaultConfig() Config {
 	return Config{Version: 1, Channels: map[string]Channel{"openai": {Protocol: "openai"}}, Routes: map[string]Route{"text": {Channel: "openai"}, "image": {Channel: "openai"}, "video": {Channel: "openai"}}}
 }
+
+// Default Motok model IDs written by init: Seedream 5.5 and Seedance 2.0 Mini.
+const (
+	defaultImageModel = "dola-seedream-5-5-261028"
+	defaultVideoModel = "dreamina-seedance-2-0-mini-260615"
+)
+
 func exampleConfig() Config {
 	return Config{
 		Version:  1,
@@ -205,8 +236,8 @@ func exampleConfig() Config {
 		Channels: map[string]Channel{"motok": {Protocol: "openai", BaseURL: "https://YOUR_API_HOST/v1", APIKey: ""}},
 		Routes: map[string]Route{
 			"text":  {Channel: "motok", Model: "YOUR_TEXT_MODEL_ID"},
-			"image": {Channel: "motok", Model: "YOUR_IMAGE_MODEL_ID"},
-			"video": {Channel: "motok", Model: "YOUR_VIDEO_MODEL_ID"},
+			"image": {Channel: "motok", Model: defaultImageModel},
+			"video": {Channel: "motok", Model: defaultVideoModel},
 		},
 	}
 }

@@ -74,7 +74,7 @@ motok config path
 motok config show
 ```
 
-`motok init` (also `motok config init`) creates a private YAML file (0600) without overwriting existing files. It contains one Motok channel, an empty `api_key`, and text/image/video routes. Fill in your API URL, key and model IDs before generating. `MOTOK_BASE_URL`, when present at initialization, supplies the initial URL; otherwise the file uses an explicit host placeholder.
+`motok init` (also `motok config init`) creates a private YAML file (0600) without overwriting existing files. It contains one Motok channel and text/image/video routes. The image route defaults to Seedream 5.5 (`dola-seedream-5-5-261028`) and the video route to Seedance 2.0 Mini (`dreamina-seedance-2-0-mini-260615`); fill in the text model ID. When `MOTOK_API_KEY` is set at initialization, the channel references it with `api_key_env: MOTOK_API_KEY` and the key itself is never written to the file; otherwise the file contains an empty `api_key` to fill in. `MOTOK_BASE_URL`, when present at initialization, supplies the initial URL; otherwise the file uses an explicit host placeholder.
 YAML supports comments and is the default. JSON remains supported through `.json`
 files; a [JSON example](config.example.json) is also provided. Unknown fields,
 duplicate YAML keys and multiple documents are rejected. `version` defaults to 1

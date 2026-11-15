@@ -211,6 +211,6 @@ sh -n install.sh scripts/build-release.sh
 
 渠道协议字段统一为 `protocol`，省略时默认为 `openai`。旧字段 `provider` 不再接受，请手动改名。
 
-`motok init`（也可用 `motok config init`）生成单个 Motok 渠道及文字、图片、视频路由。填写 `base_url`、`api_key` 和模型 ID 后使用；已存在的文件不会被覆盖。初始化时如已设置 `MOTOK_BASE_URL`，会采用该地址，否则保留明确的地址占位符。
+`motok init`（也可用 `motok config init`）生成单个 Motok 渠道及文字、图片、视频路由。图片路由默认使用 Seedream 5.5（`dola-seedream-5-5-261028`），视频路由默认使用 Seedance 2.0 Mini（`dreamina-seedance-2-0-mini-260615`），文字模型 ID 需自行填写。初始化时如已设置 `MOTOK_API_KEY`，渠道会写入 `api_key_env: MOTOK_API_KEY` 引用该变量，密钥本身不会写入文件；否则生成空的 `api_key` 供填写。已存在的文件不会被覆盖。初始化时如已设置 `MOTOK_BASE_URL`，会采用该地址，否则保留明确的地址占位符。
 
 `motok config path` 显示当前选中的配置文件完整路径，不读取文件内容；文件未创建或格式损坏时仍可使用。追加 `--json` 可获取 JSON 输出。

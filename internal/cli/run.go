@@ -161,6 +161,12 @@ func (a *app) run(ctx context.Context, cmd []string) error {
 			channel.BaseURL = base
 			initial.Channels["motok"] = channel
 		}
+		if a.getenv("MOTOK_API_KEY") != "" {
+			// Reference the variable instead of copying the secret into the file.
+			channel := initial.Channels["motok"]
+			channel.APIKeyEnv = "MOTOK_API_KEY"
+			initial.Channels["motok"] = channel
+		}
 		if err = writeConfig(path, initial); err != nil {
 			return err
 		}

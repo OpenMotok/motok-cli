@@ -273,6 +273,34 @@ func TestMotokInitCreatesBasicPrivateConfig(t *testing.T) {
 	}
 }
 
+func TestMotokInitReferencesKeyEnvironment(t *testing.T) {
+	for _, name := range []string{"config.yaml", "config.json"} {
+		path := filepath.Join(t.TempDir(), name)
+		env := map[string]string{"MOTOK_CONFIG": path, "MOTOK_API_KEY": "sk-init-secret"}
+		if code, _, stderr := runTest(t, env, "", "init"); code != 0 {
+			t.Fatal(stderr)
+		}
+		raw, err := os.ReadFile(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if strings.Contains(string(raw), "sk-init-secret") || strings.Contains(string(raw), "api_key\"") || strings.Contains(string(raw), "api_key:") {
+			t.Fatal("init stored or suggested a plain-text key", name)
+		}
+		c, err := readConfig(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if c.Channels["motok"].APIKeyEnv != "MOTOK_API_KEY" || c.Routes["image"].Model != defaultImageModel || c.Routes["video"].Model != defaultVideoModel {
+			t.Fatal("unexpected init defaults", name)
+		}
+		code, out, stderr := runTest(t, env, "", "auth", "status", "--json")
+		if code != 0 || !strings.Contains(out, `"key_source":"environment"`) {
+			t.Fatal("init key reference not resolved", out, stderr)
+		}
+	}
+}
+
 func TestConfigPathDoesNotReadOrCreateConfiguration(t *testing.T) {
 	for _, exists := range []bool{false, true} {
 		path := filepath.Join(t.TempDir(), "config.yaml")

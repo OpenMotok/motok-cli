@@ -15,11 +15,11 @@
     },
     "image": {
       "channel": "motok",
-      "model": "YOUR_IMAGE_MODEL_ID"
+      "model": "dola-seedream-5-5-261028"
     },
     "video": {
       "channel": "motok",
-      "model": "YOUR_VIDEO_MODEL_ID"
+      "model": "dreamina-seedance-2-0-mini-260615"
     }
   }
 }
