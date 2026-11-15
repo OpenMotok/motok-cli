@@ -35,7 +35,7 @@ After installing:
 ```sh
 export MOTOK_API_KEY=your-key   # add to ~/.zshrc or ~/.bashrc
 motok init
-motok login
+motok status
 ```
 
 ## Development and releases
@@ -138,7 +138,7 @@ wire protocol (`openai`, `anthropic`, `gemini`; omitted means `openai`).
 different roles. For example, channel `company-proxy` may use protocol `anthropic`,
 while `routes.text.channel` is `company-proxy`.
 
-`models`, `login`, `status`, `auth status` and native `request` commands default to
+`models`, `status`, `auth status` and native `request` commands default to
 the text route. Use `--type image` or `--type video` to operate on that capability's
 channel. Model discovery lists the selected channel's models; it does not infer
 which models support a modality. Generation commands reject a conflicting `--type`.
@@ -187,7 +187,7 @@ and Gemini use their native fields.
 
 ```sh
 motok auth status
-motok login
+motok status
 motok models --json
 motok text generate --prompt "Hello"
 motok text generate --model your-model --prompt "Hello"
@@ -201,11 +201,11 @@ motok help --lang zh
 motok help --ai
 ```
 
-`login` validates the configured key using the model-list endpoint; it does not
-open a browser, create a user account or store another session. Services without
-a model-list endpoint can still be used for generation; their `login`/`models`
+`status` validates the configured key using the model-list endpoint; it does not
+open a browser, create a user account or store a session. Services without a
+model-list endpoint can still be used for generation; their `status`/`models`
 commands will fail. `auth status` is local configuration status, not a network
-health check. `status` performs the same key validation as `login`.
+health check.
 
 | Capability | OpenAI-compatible | Anthropic | Gemini |
 | --- | --- | --- | --- |

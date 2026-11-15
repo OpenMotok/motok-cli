@@ -234,7 +234,7 @@ func (a *app) run(ctx context.Context, cmd []string) error {
 	ctx, cancel := context.WithTimeout(ctx, a.opts.timeout)
 	defer cancel()
 	switch command {
-	case "models", "login", "status":
+	case "models", "status":
 		if a.opts.dryRun {
 			return a.preview("GET", "/models", "", nil)
 		}
@@ -311,7 +311,7 @@ func (a *app) help() error {
 	}
 
 	if a.opts.json || a.opts.ai {
-		return a.print(map[string]any{"name": "motok", "version": Version, "commands": []string{"init", "config init", "config path", "config show", "auth status", "login", "models", "text generate", "response generate", "image generate", "image edit", "video generate", "video status ID", "video download ID", "request METHOD /endpoint"}, "auth": "Configuration file and environment variables only; no credentials in command flags.", "options": []string{"--type text|image|video", "--model ID", "--prompt TEXT|-", "--output FILE", "--file FILE", "--data FILE|-", "--size SIZE", "--seconds N", "--wait", "--poll-interval 10s", "--timeout 10m", "--json", "--dry-run", "--lang en|zh"}}, "")
+		return a.print(map[string]any{"name": "motok", "version": Version, "commands": []string{"init", "config init", "config path", "config show", "auth status", "status", "models", "text generate", "response generate", "image generate", "image edit", "video generate", "video status ID", "video download ID", "request METHOD /endpoint"}, "auth": "Configuration file and environment variables only; no credentials in command flags.", "options": []string{"--type text|image|video", "--model ID", "--prompt TEXT|-", "--output FILE", "--file FILE", "--data FILE|-", "--size SIZE", "--seconds N", "--wait", "--poll-interval 10s", "--timeout 10m", "--json", "--dry-run", "--lang en|zh"}}, "")
 	}
 	text := `Motok.ai CLI — direct official APIs and compatible gateways
 
@@ -320,7 +320,7 @@ func (a *app) help() error {
   motok config path                       Show the selected configuration file path
   motok config show                       Show configuration with keys redacted
   motok auth status                       Show configured connection without networking
-  motok login                             Validate configured API key via model discovery
+  motok status                            Validate configured API key via model discovery
   motok models                            List models available to the configured key
   motok text generate --prompt "Hello"     Generate text
   motok response generate --prompt "Hi"    OpenAI Responses API
@@ -348,7 +348,7 @@ Use motok help --ai for machine-readable command discovery.
   motok config path                       查看当前配置文件路径
   motok config show                       查看配置（隐藏密钥）
   motok auth status                       查看当前配置，不发送请求
-  motok login                             使用模型列表接口验证密钥
+  motok status                            使用模型列表接口验证密钥
   motok models                            列出可用模型
   motok text generate --prompt "你好"      生成文本
   motok response generate --prompt "你好"  调用 OpenAI Responses

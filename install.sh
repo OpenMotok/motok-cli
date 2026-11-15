@@ -94,4 +94,4 @@ mv -f "$staged_binary" "$bin_dir/motok"
 staged_binary=
 echo "Installed motok $version in $bin_dir."
 case ":${PATH:-}:" in *":$bin_dir:"*) ;; *) echo "Add $bin_dir to PATH to run motok, for example:"; echo "  echo 'export PATH=\"$bin_dir:\$PATH\"' >> ~/.zshrc" ;; esac
-echo 'Next: export MOTOK_API_KEY=... then run: motok init && motok login'
+echo 'Next: export MOTOK_API_KEY=... then run: motok init && motok status'

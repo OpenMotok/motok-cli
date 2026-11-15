@@ -27,7 +27,7 @@ Windows 用户从 Releases 下载对应 ZIP，核对 `SHA256SUMS` 后将 `motok.
 ```sh
 export MOTOK_API_KEY=你的密钥   # 建议写入 ~/.zshrc 或 ~/.bashrc
 motok init
-motok login
+motok status
 ```
 
 ## 开发与发布
@@ -150,7 +150,7 @@ motok request POST /embeddings --type text --data request.json --json
 
 ```sh
 motok auth status
-motok login
+motok status
 motok models --json
 motok text generate --prompt "你好"
 motok text generate --model your-model --prompt "你好"
@@ -164,7 +164,7 @@ motok help --lang zh
 motok help --ai
 ```
 
-`login` 使用已配置的密钥访问模型列表验证连接，不会打开浏览器、创建用户或另存会话。如果上游不提供模型列表接口，`login` 和 `models` 可能失败，但仍可直接调用生成接口。`auth status` 只检查本地配置，`status` 则进行在线密钥验证。
+`status` 使用已配置的密钥访问模型列表验证连接，不会打开浏览器、创建用户或保存会话。如果上游不提供模型列表接口，`status` 和 `models` 可能失败，但仍可直接调用生成接口。`auth status` 只检查本地配置，不发送请求。
 
 | 能力 | OpenAI 兼容协议 | Anthropic | Gemini |
 | --- | --- | --- | --- |
