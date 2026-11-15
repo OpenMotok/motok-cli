@@ -11,7 +11,7 @@ func chineseError(e *cliError) string {
 		"route_missing":          "请在 routes 中配置所需能力对应的渠道。",
 		"route_invalid":          "能力类型必须为 text、image 或 video，且不能与命令冲突。",
 		"channel_missing":        "路由引用的渠道尚未配置。",
-		"provider_invalid":       "protocol 必须为 openai、anthropic 或 gemini。",
+		"protocol_invalid":       "protocol 必须为 openai、anthropic 或 gemini。",
 		"url_invalid":            "服务地址必须是 HTTP(S) URL，且不能包含用户名、密码、查询参数或片段。",
 		"key_invalid":            "API Key 包含无效空白字符。",
 		"key_missing":            "请设置 配置对应的密钥环境变量，或在配置中填写 api_key。",

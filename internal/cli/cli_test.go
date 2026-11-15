@@ -88,7 +88,7 @@ func TestOfficialProtocolsAndCustomPrefixes(t *testing.T) {
 		})
 	}
 }
-func TestConfigPrecedenceAndProviderIsolation(t *testing.T) {
+func TestConfigPrecedenceAndProtocolIsolation(t *testing.T) {
 	c := connectionConfig(Channel{APIKey: "inline", APIKeyEnv: "TEAM_KEY", BaseURL: "https://original.example/proxy/v1", BaseURLEnv: "TEAM_URL"}, "", "anthropic")
 	env := map[string]string{"TEAM_KEY": "override", "TEAM_URL": "https://custom.example/prefix/v1", "OPENAI_API_KEY": "wrong-provider"}
 	r, err := resolve(c, "text", func(k string) string { return env[k] })
@@ -124,9 +124,9 @@ func TestConfigInitAndRedaction(t *testing.T) {
 		t.Fatal("existing configuration overwritten")
 	}
 	c := exampleConfig()
-	channel := c.Channels["openai"]
+	channel := c.Channels["motok"]
 	channel.APIKey = "secret-value-to-redact"
-	c.Channels["openai"] = channel
+	c.Channels["motok"] = channel
 	b, _ := json.Marshal(c)
 	if err = os.WriteFile(path, b, 0600); err != nil {
 		t.Fatal(err)
@@ -349,7 +349,7 @@ func TestConfiguredTokenParameterAndChineseError(t *testing.T) {
 }
 
 func connectionConfig(channel Channel, language, protocol string) Config {
-	channel.Provider = protocol
+	channel.Protocol = protocol
 	return Config{Version: 1, Language: language, Channels: map[string]Channel{"test": channel}, Routes: map[string]Route{"text": {Channel: "test"}, "image": {Channel: "test"}, "video": {Channel: "test"}}}
 }
 
@@ -398,8 +398,8 @@ func TestCapabilityRoutingAndSharedChannelModels(t *testing.T) {
 	}))
 	defer mediaServer.Close()
 	c := Config{Version: 1, Channels: map[string]Channel{
-		"claude": {Provider: "anthropic", BaseURL: textServer.URL, APIKeyEnv: "CLAUDE_KEY"},
-		"media":  {Provider: "openai", BaseURL: mediaServer.URL, APIKeyEnv: "MEDIA_KEY"},
+		"claude": {Protocol: "anthropic", BaseURL: textServer.URL, APIKeyEnv: "CLAUDE_KEY"},
+		"media":  {Protocol: "openai", BaseURL: mediaServer.URL, APIKeyEnv: "MEDIA_KEY"},
 	}, Routes: map[string]Route{"text": {Channel: "claude", Model: "text-model"}, "image": {Channel: "media", Model: "image-model"}, "video": {Channel: "media", Model: "video-model"}}}
 	env := envConfig(t, c)
 	env["CLAUDE_KEY"] = "claude-key"

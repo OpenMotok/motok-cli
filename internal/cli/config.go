@@ -14,10 +14,10 @@ import (
 )
 
 type Channel struct {
-	Provider       string `json:"provider,omitempty" yaml:"provider,omitempty"`
+	Protocol       string `json:"protocol,omitempty" yaml:"protocol,omitempty"`
 	BaseURL        string `json:"base_url,omitempty" yaml:"base_url,omitempty"`
 	BaseURLEnv     string `json:"base_url_env,omitempty" yaml:"base_url_env,omitempty"`
-	APIKey         string `json:"api_key,omitempty" yaml:"api_key,omitempty"`
+	APIKey         string `json:"api_key" yaml:"api_key"`
 	APIKeyEnv      string `json:"api_key_env,omitempty" yaml:"api_key_env,omitempty"`
 	Model          string `json:"model,omitempty" yaml:"model,omitempty"`
 	MaxTokensField string `json:"max_tokens_field,omitempty" yaml:"max_tokens_field,omitempty"`
@@ -106,7 +106,7 @@ func resolve(c Config, kind string, getenv func(string) string) (resolved, error
 	if !ok {
 		return resolved{}, failure("channel_missing", "route references a channel that is not configured")
 	}
-	protocol := p.Provider
+	protocol := p.Protocol
 	if protocol == "" {
 		protocol = "openai"
 	}
@@ -123,7 +123,7 @@ func resolve(c Config, kind string, getenv func(string) string) (resolved, error
 	}
 	def, ok := defaults[protocol]
 	if !ok {
-		return resolved{}, failure("provider_invalid", "protocol must be openai, anthropic or gemini")
+		return resolved{}, failure("protocol_invalid", "protocol must be openai, anthropic or gemini")
 	}
 	if p.APIKeyEnv == "" {
 		p.APIKeyEnv = def[1]
@@ -196,14 +196,17 @@ func writeConfig(path string, c Config) error {
 	return writeNew(path, data)
 }
 func defaultConfig() Config {
-	return Config{Version: 1, Channels: map[string]Channel{"openai": {Provider: "openai"}}, Routes: map[string]Route{"text": {Channel: "openai"}, "image": {Channel: "openai"}, "video": {Channel: "openai"}}}
+	return Config{Version: 1, Channels: map[string]Channel{"openai": {Protocol: "openai"}}, Routes: map[string]Route{"text": {Channel: "openai"}, "image": {Channel: "openai"}, "video": {Channel: "openai"}}}
 }
 func exampleConfig() Config {
-	c := defaultConfig()
-	c.Language = "en"
-	c.Channels["claude"] = Channel{Provider: "anthropic", APIKeyEnv: "ANTHROPIC_API_KEY"}
-	c.Channels["gemini"] = Channel{Provider: "gemini", APIKeyEnv: "GEMINI_API_KEY"}
-	c.Channels["media"] = Channel{Provider: "openai", BaseURL: "http://127.0.0.1:8092/v1", APIKeyEnv: "MOTOK_API_KEY", BaseURLEnv: "MOTOK_BASE_URL"}
-	c.Routes["video"] = Route{Channel: "media"}
-	return c
+	return Config{
+		Version:  1,
+		Language: "en",
+		Channels: map[string]Channel{"motok": {Protocol: "openai", BaseURL: "https://YOUR_API_HOST/v1", APIKey: ""}},
+		Routes: map[string]Route{
+			"text":  {Channel: "motok", Model: "YOUR_TEXT_MODEL_ID"},
+			"image": {Channel: "motok", Model: "YOUR_IMAGE_MODEL_ID"},
+			"video": {Channel: "motok", Model: "YOUR_VIDEO_MODEL_ID"},
+		},
+	}
 }

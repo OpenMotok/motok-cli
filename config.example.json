@@ -2,34 +2,24 @@
   "version": 1,
   "language": "en",
   "channels": {
-    "claude": {
-      "api_key_env": "ANTHROPIC_API_KEY",
-      "provider": "anthropic"
-    },
-    "openai": {
-      "api_key_env": "OPENAI_API_KEY",
-      "max_tokens_field": "max_completion_tokens",
-      "provider": "openai"
-    },
-    "media": {
-      "base_url": "http://127.0.0.1:8092/v1",
-      "api_key_env": "MOTOK_API_KEY",
-      "base_url_env": "MOTOK_BASE_URL",
-      "provider": "openai"
+    "motok": {
+      "protocol": "openai",
+      "base_url": "https://YOUR_API_HOST/v1",
+      "api_key": ""
     }
   },
   "routes": {
     "text": {
-      "model": "your-text-model",
-      "channel": "claude"
+      "channel": "motok",
+      "model": "YOUR_TEXT_MODEL_ID"
     },
     "image": {
-      "model": "your-image-model",
-      "channel": "openai"
+      "channel": "motok",
+      "model": "YOUR_IMAGE_MODEL_ID"
     },
     "video": {
-      "model": "your-video-model",
-      "channel": "media"
+      "channel": "motok",
+      "model": "YOUR_VIDEO_MODEL_ID"
     }
   }
 }

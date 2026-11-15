@@ -49,11 +49,12 @@ API keys and URLs come **only** from configuration and environment variables.
 There are no profiles, `--profile`, `--api-key` or `--base-url` arguments.
 
 ```sh
-motok config init
+motok init
+motok config path
 motok config show
 ```
 
-`config init` creates a private YAML file (0600) without overwriting existing files.
+`motok init` (also `motok config init`) creates a private YAML file (0600) without overwriting existing files. It contains one Motok channel, an empty `api_key`, and text/image/video routes. Fill in your API URL, key and model IDs before generating. `MOTOK_BASE_URL`, when present at initialization, supplies the initial URL; otherwise the file uses an explicit host placeholder.
 YAML supports comments and is the default. JSON remains supported through `.json`
 files; a [JSON example](config.example.json) is also provided. Unknown fields,
 duplicate YAML keys and multiple documents are rejected. `version` defaults to 1
@@ -66,7 +67,7 @@ precedence. Select another file with:
 
 ```sh
 export MOTOK_CONFIG=./motok.config.yaml
-motok config init
+motok init
 ```
 
 Configure named **channels** with their protocol and credentials, then map each
@@ -76,19 +77,19 @@ capability to a channel and model. See [config.example.yaml](config.example.yaml
 version: 1
 language: en
 
-# Channel names are arbitrary; provider selects the request protocol.
+# Channel names are arbitrary; protocol selects the request protocol.
 channels:
   claude:
-    provider: anthropic
+    protocol: anthropic
     base_url: https://api.anthropic.com/v1
     api_key_env: ANTHROPIC_API_KEY
   openai:
-    provider: openai
+    protocol: openai
     base_url: https://api.openai.com/v1
     api_key_env: OPENAI_API_KEY
     max_tokens_field: max_completion_tokens
   media:
-    provider: openai
+    protocol: openai
     base_url: http://127.0.0.1:8092/v1
     api_key_env: MOTOK_API_KEY
     base_url_env: MOTOK_BASE_URL
@@ -111,10 +112,10 @@ account. `text generate` automatically uses `routes.text`; image generation and
 editing use `routes.image`; all video commands use `routes.video`. `response
 generate` also uses `routes.text` and requires an OpenAI-compatible channel.
 A single channel can serve multiple capabilities with different route models.
-No whole-configuration switching is needed. `channels.<name>.provider` selects the
+No whole-configuration switching is needed. `channels.<name>.protocol` selects the
 wire protocol (`openai`, `anthropic`, `gemini`; omitted means `openai`).
 `routes.<capability>.channel` references a custom channel name. These fields have
-different roles. For example, channel `company-proxy` may use provider `anthropic`,
+different roles. For example, channel `company-proxy` may use protocol `anthropic`,
 while `routes.text.channel` is `company-proxy`.
 
 `models`, `login`, `status`, `auth status` and native `request` commands default to
@@ -251,3 +252,8 @@ and uses a pure Go YAML parser bundled into the binary.
 Protocol references: [OpenAI](https://developers.openai.com/api/reference/overview),
 [Anthropic](https://platform.claude.com/docs/en/api/overview),
 [Gemini](https://ai.google.dev/api/generate-content).
+
+Channel configuration uses `protocol` only; omitted values default to `openai`.
+The former `provider` field is rejected as an unknown field.
+
+`motok config path` prints the selected absolute configuration file path without reading its contents. It also works before initialization or when the file is malformed. Add `--json` for machine-readable output.

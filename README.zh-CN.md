@@ -36,7 +36,8 @@ motok --version
 密钥和地址只从配置文件、环境变量读取，不需要 profile，也不支持 `--profile`、`--api-key`、`--base-url`。
 
 ```sh
-motok config init
+motok init
+motok config path
 motok config show
 ```
 
@@ -46,7 +47,7 @@ motok config show
 
 ```sh
 export MOTOK_CONFIG=./motok.config.yaml
-motok config init
+motok init
 ```
 
 `channels` 定义各渠道的协议、地址和密钥；`routes` 指定 text、image、video 分别使用哪个渠道及模型。完整示例见 [config.example.yaml](config.example.yaml)：
@@ -55,19 +56,19 @@ motok config init
 version: 1
 language: zh
 
-# Channel names are arbitrary; provider selects the request protocol.
+# Channel names are arbitrary; protocol selects the request protocol.
 channels:
   claude:
-    provider: anthropic
+    protocol: anthropic
     base_url: https://api.anthropic.com/v1
     api_key_env: ANTHROPIC_API_KEY
   openai:
-    provider: openai
+    protocol: openai
     base_url: https://api.openai.com/v1
     api_key_env: OPENAI_API_KEY
     max_tokens_field: max_completion_tokens
   media:
-    provider: openai
+    protocol: openai
     base_url: http://127.0.0.1:8092/v1
     api_key_env: MOTOK_API_KEY
     base_url_env: MOTOK_BASE_URL
@@ -93,7 +94,7 @@ motok image generate --prompt "水彩风格的小猫" -o cat.png
 motok video generate --prompt "小猫走过花园" --wait -o cat.mp4
 ```
 
-文本自动走 `routes.text`，图片生成和编辑走 `routes.image`，视频生成、查询与下载走 `routes.video`。同一渠道可以用于多种能力，每种能力配置不同的模型。`channels.<名称>.provider` 表示协议（openai / anthropic / gemini，省略时默认 openai）；`routes.<能力>.channel` 则引用自定义渠道名。例如渠道 `company-proxy` 的协议可以是 anthropic，而 `routes.text.channel` 填 company-proxy。`response generate` 使用 text 路由，要求该渠道支持 OpenAI Responses。
+文本自动走 `routes.text`，图片生成和编辑走 `routes.image`，视频生成、查询与下载走 `routes.video`。同一渠道可以用于多种能力，每种能力配置不同的模型。`channels.<名称>.protocol` 表示协议（openai / anthropic / gemini，省略时默认 openai）；`routes.<能力>.channel` 则引用自定义渠道名。例如渠道 `company-proxy` 的协议可以是 anthropic，而 `routes.text.channel` 填 company-proxy。`response generate` 使用 text 路由，要求该渠道支持 OpenAI Responses。
 
 模型查询、登录检查和原生请求默认使用 text 路由，可以用 `--type` 指定能力：
 
@@ -185,3 +186,9 @@ sh -n install.sh scripts/build-release.sh
 ```
 
 测试使用本地模拟 HTTP 服务和测试密钥，不访问官方付费接口。本 Go 模块不依赖 `../services`；YAML 解析库为纯 Go 实现，随二进制一起打包。
+
+渠道协议字段统一为 `protocol`，省略时默认为 `openai`。旧字段 `provider` 不再接受，请手动改名。
+
+`motok init`（也可用 `motok config init`）生成单个 Motok 渠道及文字、图片、视频路由。填写 `base_url`、`api_key` 和模型 ID 后使用；已存在的文件不会被覆盖。初始化时如已设置 `MOTOK_BASE_URL`，会采用该地址，否则保留明确的地址占位符。
+
+`motok config path` 显示当前选中的配置文件完整路径，不读取文件内容；文件未创建或格式损坏时仍可使用。追加 `--json` 可获取 JSON 输出。

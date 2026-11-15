@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"path/filepath"
 	"strings"
 	"time"
 )
@@ -143,8 +144,24 @@ func (a *app) run(ctx context.Context, cmd []string) error {
 	if err != nil {
 		return err
 	}
-	if strings.Join(cmd, " ") == "config init" {
-		if err = writeConfig(path, exampleConfig()); err != nil {
+	if strings.Join(cmd, " ") == "config path" {
+		absolute, err := filepath.Abs(path)
+		if err != nil {
+			return failure("config_path", "cannot resolve configuration path")
+		}
+		return a.print(map[string]string{"config": absolute}, absolute)
+	}
+	if strings.Join(cmd, " ") == "config init" || strings.Join(cmd, " ") == "init" {
+		initial := exampleConfig()
+		if base := a.getenv("MOTOK_BASE_URL"); base != "" {
+			if !validAPIURL(base) {
+				return failure("url_invalid", "MOTOK_BASE_URL must be an HTTP(S) URL without credentials, query or fragment")
+			}
+			channel := initial.Channels["motok"]
+			channel.BaseURL = base
+			initial.Channels["motok"] = channel
+		}
+		if err = writeConfig(path, initial); err != nil {
 			return err
 		}
 		return a.print(map[string]string{"config": path}, path)
@@ -212,7 +229,7 @@ func (a *app) run(ctx context.Context, cmd []string) error {
 	}
 	command := strings.Join(cmd, " ")
 	if command == "auth status" {
-		return a.print(map[string]any{"channel": a.connection.ChannelName, "type": a.connection.Kind, "provider": a.connection.Protocol, "base_url": a.connection.BaseURL, "configured": a.connection.APIKey != "", "key_source": a.connection.KeySource}, "")
+		return a.print(map[string]any{"channel": a.connection.ChannelName, "type": a.connection.Kind, "protocol": a.connection.Protocol, "base_url": a.connection.BaseURL, "configured": a.connection.APIKey != "", "key_source": a.connection.KeySource}, "")
 	}
 	ctx, cancel := context.WithTimeout(ctx, a.opts.timeout)
 	defer cancel()
@@ -226,7 +243,7 @@ func (a *app) run(ctx context.Context, cmd []string) error {
 			return err
 		}
 		if command != "models" {
-			return a.print(map[string]any{"channel": a.connection.ChannelName, "type": a.connection.Kind, "provider": a.connection.Protocol, "authenticated": true}, a.localized("Authentication successful", "鉴权成功"))
+			return a.print(map[string]any{"channel": a.connection.ChannelName, "type": a.connection.Kind, "protocol": a.connection.Protocol, "authenticated": true}, a.localized("Authentication successful", "鉴权成功"))
 		}
 		if a.opts.json {
 			return a.print(data, "")
@@ -282,7 +299,7 @@ func (a *app) preview(method, path, contentType string, body []byte) error {
 	if json.Valid(body) {
 		_ = json.Unmarshal(body, &payload)
 	}
-	return a.print(map[string]any{"dry_run": true, "channel": a.connection.ChannelName, "type": a.connection.Kind, "provider": a.connection.Protocol, "method": method, "url": a.connection.BaseURL + path, "content_type": contentType, "body": payload, "file": a.opts.file}, "")
+	return a.print(map[string]any{"dry_run": true, "channel": a.connection.ChannelName, "type": a.connection.Kind, "protocol": a.connection.Protocol, "method": method, "url": a.connection.BaseURL + path, "content_type": contentType, "body": payload, "file": a.opts.file}, "")
 }
 func (a *app) help() error {
 	if a.opts.lang == "" {
@@ -294,11 +311,13 @@ func (a *app) help() error {
 	}
 
 	if a.opts.json || a.opts.ai {
-		return a.print(map[string]any{"name": "motok", "version": Version, "commands": []string{"config init", "config show", "auth status", "login", "models", "text generate", "response generate", "image generate", "image edit", "video generate", "video status ID", "video download ID", "request METHOD /endpoint"}, "auth": "Configuration file and environment variables only; no credentials in command flags.", "options": []string{"--type text|image|video", "--model ID", "--prompt TEXT|-", "--output FILE", "--file FILE", "--data FILE|-", "--size SIZE", "--seconds N", "--wait", "--poll-interval 10s", "--timeout 10m", "--json", "--dry-run", "--lang en|zh"}}, "")
+		return a.print(map[string]any{"name": "motok", "version": Version, "commands": []string{"init", "config init", "config path", "config show", "auth status", "login", "models", "text generate", "response generate", "image generate", "image edit", "video generate", "video status ID", "video download ID", "request METHOD /endpoint"}, "auth": "Configuration file and environment variables only; no credentials in command flags.", "options": []string{"--type text|image|video", "--model ID", "--prompt TEXT|-", "--output FILE", "--file FILE", "--data FILE|-", "--size SIZE", "--seconds N", "--wait", "--poll-interval 10s", "--timeout 10m", "--json", "--dry-run", "--lang en|zh"}}, "")
 	}
 	text := `Motok.ai CLI — direct official APIs and compatible gateways
 
-  motok config init                       Create a private example configuration
+  motok init                              Create a private Motok configuration
+  motok config init                       Alias for motok init
+  motok config path                       Show the selected configuration file path
   motok config show                       Show configuration with keys redacted
   motok auth status                       Show configured connection without networking
   motok login                             Validate configured API key via model discovery
@@ -314,7 +333,7 @@ func (a *app) help() error {
 
 Configuration: MOTOK_CONFIG or the user config directory / motok / config.yaml.
 Keys and URLs come only from config and environment. Commands select channels automatically using routes.text/image/video.
-Providers: openai (also Motok.ai / compatible services), anthropic, gemini.
+Protocols: openai (also Motok.ai / compatible services), anthropic, gemini.
 Set a model on a route/channel or use --model. Model availability depends on the service.
 Options: --type text|image|video --json --dry-run --lang en|zh --timeout 10m
 Video options: --seconds N --size WIDTHxHEIGHT --wait --poll-interval 10s
@@ -324,7 +343,9 @@ Use motok help --ai for machine-readable command discovery.
 	if a.opts.lang == "zh" {
 		text = `Motok.ai 命令行 — 直连官方 API 与兼容网关
 
-  motok config init                       生成权限受限的示例配置
+  motok init                              生成权限受限的 Motok 基础配置
+  motok config init                       与 motok init 相同
+  motok config path                       查看当前配置文件路径
   motok config show                       查看配置（隐藏密钥）
   motok auth status                       查看当前配置，不发送请求
   motok login                             使用模型列表接口验证密钥

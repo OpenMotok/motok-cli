@@ -85,7 +85,7 @@ func TestYAMLInitRoundTripAndExistingFile(t *testing.T) {
 				t.Fatal(errors)
 			}
 			c, err := readConfig(path)
-			if err != nil || len(c.Channels) != 4 || c.Routes["video"].Channel != "media" {
+			if err != nil || len(c.Channels) != 1 || c.Routes["video"].Channel != "motok" {
 				t.Fatal("configuration did not round-trip", err)
 			}
 			data, _ := os.ReadFile(path)
@@ -154,11 +154,11 @@ func TestDefaultConfigDiscoveryPrefersYAMLAndRetainsJSON(t *testing.T) {
 	}
 }
 
-func TestChannelProviderIsProtocolAndRouteChannelIsReference(t *testing.T) {
+func TestChannelProtocolIsProtocolAndRouteChannelIsReference(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "config.yaml")
 	data := `channels:
   company-proxy:
-    provider: anthropic
+    protocol: anthropic
     base_url: https://example.com/anthropic/v1
     api_key_env: COMPANY_KEY
 routes:
@@ -191,10 +191,117 @@ routes:
 	if err = json.Unmarshal([]byte(out), &preview); err != nil {
 		t.Fatal(err)
 	}
-	if preview["channel"] != "company-proxy" || preview["provider"] != "anthropic" || preview["url"] != "https://example.com/anthropic/v1/messages" {
+	if preview["channel"] != "company-proxy" || preview["protocol"] != "anthropic" || preview["url"] != "https://example.com/anthropic/v1/messages" {
 		t.Fatal("preview does not distinguish reference and protocol")
 	}
-	if _, exists := preview["protocol"]; exists {
-		t.Fatal("unexpected protocol field emitted")
+	if _, exists := preview["provider"]; exists {
+		t.Fatal("obsolete provider field emitted")
+	}
+}
+
+func TestProtocolDefaultsAndRejectsProvider(t *testing.T) {
+	for _, format := range []string{"yaml", "json"} {
+		t.Run(format, func(t *testing.T) {
+			path := filepath.Join(t.TempDir(), "config."+format)
+			raw := `channels:
+  media:
+    base_url: https://example.com/v1
+routes:
+  video:
+    channel: media
+`
+			if format == "json" {
+				raw = `{"channels":{"media":{"base_url":"https://example.com/v1"}},"routes":{"video":{"channel":"media"}}}`
+			}
+			if err := os.WriteFile(path, []byte(raw), 0600); err != nil {
+				t.Fatal(err)
+			}
+			c, err := readConfig(path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			r, err := resolve(c, "video", func(string) string { return "" })
+			if err != nil || r.Protocol != "openai" {
+				t.Fatal("omitted protocol must default to openai", r.Protocol, err)
+			}
+			if format == "json" {
+				raw = `{"channels":{"media":{"provider":"openai"}},"routes":{"video":{"channel":"media"}}}`
+			} else {
+				raw = "channels:\n  media:\n    provider: openai\nroutes:\n  video:\n    channel: media\n"
+			}
+			if err := os.WriteFile(path, []byte(raw), 0600); err != nil {
+				t.Fatal(err)
+			}
+			if _, err := readConfig(path); err == nil {
+				t.Fatal("obsolete provider accepted")
+			}
+		})
+	}
+}
+
+func TestMotokInitCreatesBasicPrivateConfig(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "config.yaml")
+	env := map[string]string{"MOTOK_CONFIG": path, "MOTOK_BASE_URL": "https://gateway.example/v1"}
+	code, _, stderr := runTest(t, env, "", "init")
+	if code != 0 {
+		t.Fatal(stderr)
+	}
+	c, err := readConfig(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(c.Channels) != 1 || c.Channels["motok"].Protocol != "openai" || c.Channels["motok"].BaseURL != "https://gateway.example/v1" || c.Channels["motok"].APIKey != "" {
+		t.Fatal("unexpected Motok defaults")
+	}
+	for _, kind := range []string{"text", "image", "video"} {
+		if c.Routes[kind].Channel != "motok" || c.Routes[kind].Model == "" {
+			t.Fatal("missing route", kind)
+		}
+	}
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(raw), `api_key: ""`) {
+		t.Fatal("missing editable key field")
+	}
+	if code, _, _ := runTest(t, env, "", "init"); code == 0 {
+		t.Fatal("init overwrote an existing file")
+	}
+	if code, _, _ := runTest(t, env, "", "config", "init"); code == 0 {
+		t.Fatal("alias overwrote an existing file")
+	}
+}
+
+func TestConfigPathDoesNotReadOrCreateConfiguration(t *testing.T) {
+	for _, exists := range []bool{false, true} {
+		path := filepath.Join(t.TempDir(), "config.yaml")
+		if exists {
+			if err := os.WriteFile(path, []byte("invalid: ["), 0600); err != nil {
+				t.Fatal(err)
+			}
+		}
+		env := map[string]string{"MOTOK_CONFIG": path}
+		code, out, stderr := runTest(t, env, "", "config", "path")
+		if code != 0 || strings.TrimSpace(out) != path {
+			t.Fatal("path lookup failed", code, out, stderr)
+		}
+		code, out, stderr = runTest(t, env, "", "config", "path", "--json")
+		var response struct {
+			Config string `json:"config"`
+		}
+		if code != 0 || json.Unmarshal([]byte(out), &response) != nil || response.Config != path {
+			t.Fatal("JSON path failed", out, stderr)
+		}
+		if !exists {
+			if _, err := os.Stat(path); !os.IsNotExist(err) {
+				t.Fatal("path lookup created configuration")
+			}
+		}
+	}
+	code, out, stderr := runTest(t, map[string]string{"MOTOK_CONFIG": "relative-config.yaml"}, "", "config", "path")
+	want, err := filepath.Abs("relative-config.yaml")
+	if err != nil || code != 0 || strings.TrimSpace(out) != want {
+		t.Fatal("relative path not resolved", out, stderr, err)
 	}
 }
