@@ -4,24 +4,42 @@
 
 [English](README.md)
 
-## 构建与安装
+## 安装
 
-开发需要 Go 1.26.1 或更新版本，在本目录执行：
+macOS / Linux 一行安装最新版本（无需 Go，无需 sudo，默认装到 `~/.local/bin`）：
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/OpenMotok/motok-cli/main/install.sh | sh
+```
+
+指定版本或安装目录：
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/OpenMotok/motok-cli/main/install.sh | sh -s -- --version v0.1.0 --bin-dir ~/bin
+```
+
+脚本从 [GitHub Releases](https://github.com/OpenMotok/motok-cli/releases) 下载对应平台的压缩包，通过 HTTPS 下载并核对 `SHA256SUMS`，校验失败不会替换已安装的版本。可用环境变量 `MOTOK_VERSION`、`MOTOK_BIN_DIR` 调整；`MOTOK_RELEASE_BASE_URL` 可指向自建镜像目录（需同时指定 `--version`）。若安装目录不在 PATH 中，脚本会提示如何加入。
+
+Windows 用户从 Releases 下载对应 ZIP，核对 `SHA256SUMS` 后将 `motok.exe` 所在目录加入 PATH。
+
+安装后：
+
+```sh
+export MOTOK_API_KEY=你的密钥   # 建议写入 ~/.zshrc 或 ~/.bashrc
+motok init
+motok login
+```
+
+## 开发与发布
+
+开发需要 Go 1.26.1 或更新版本：
 
 ```sh
 go build -trimpath -o bin/motok ./cmd/motok
 ./bin/motok help --lang zh
 ```
 
-发布后，用户可以通过脚本安装编译好的二进制，无需安装 Go：
-
-```sh
-MOTOK_RELEASE_BASE_URL=https://your-release-host/v0.1.0 sh install.sh --version v0.1.0
-```
-
-发布地址需要指向你实际托管的目录，其中包含对应平台的压缩包和 `SHA256SUMS`。当前项目尚未配置或发布公网下载地址。安装脚本通过 HTTPS 下载、验证 SHA-256，无需 sudo，默认安装到用户本地 bin 目录。可用 `--bin-dir` 或 `MOTOK_BIN_DIR` 更改安装位置，再将该目录加入 PATH。
-
-构建全部平台的发布包并从本地安装：
+本地构建全部平台的发布包并安装：
 
 ```sh
 sh scripts/build-release.sh v0.1.0
@@ -29,7 +47,11 @@ sh install.sh --from-dir ./dist --version v0.1.0
 motok --version
 ```
 
-发布包覆盖 macOS、Linux、Windows 的 AMD64 和 ARM64 架构。Windows 用户解压对应 ZIP，核对 SHA-256 后将 `motok.exe` 所在目录加入 PATH。发布构建需要 `tar`、`zip` 和 `sha256sum` 或 `shasum`；远程安装需要 `curl`。校验和用于发现损坏或不匹配的文件，发布地址本身仍需可信。
+发布新版本：推送 `v*` 标签，GitHub Actions 会运行测试、构建 macOS / Linux / Windows 的 AMD64 和 ARM64 压缩包，并连同 `SHA256SUMS`、`install.sh` 发布为 GitHub Release。
+
+```sh
+git tag v0.1.0 && git push origin v0.1.0
+```
 
 ## 渠道与能力路由
 

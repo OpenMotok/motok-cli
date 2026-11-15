@@ -1,7 +1,8 @@
 #!/bin/sh
 set -eu
 
-version=${MOTOK_VERSION:-v0.1.0}
+repo=${MOTOK_REPO:-OpenMotok/motok-cli}
+version=${MOTOK_VERSION:-latest}
 bin_dir=${MOTOK_BIN_DIR:-${HOME:?HOME is required}/.local/bin}
 release_url=${MOTOK_RELEASE_BASE_URL:-}
 from_dir=
@@ -9,11 +10,14 @@ usage() {
   cat <<'HELP'
 Install the Motok.ai CLI binary (no Go or Node.js required).
 
+  curl -fsSL https://raw.githubusercontent.com/OpenMotok/motok-cli/main/install.sh | sh
+  curl -fsSL https://raw.githubusercontent.com/OpenMotok/motok-cli/main/install.sh | sh -s -- --version v0.1.0
   sh install.sh --from-dir ./dist --version v0.1.0
-  MOTOK_RELEASE_BASE_URL=https://your-release-host/v0.1.0 sh install.sh --version v0.1.0
 
-Options: --version VERSION --bin-dir DIRECTORY --from-dir DIRECTORY --help
-Environment: MOTOK_VERSION, MOTOK_BIN_DIR, MOTOK_RELEASE_BASE_URL
+By default the latest GitHub Release of OpenMotok/motok-cli is installed into ~/.local/bin.
+
+Options: --version VERSION|latest --bin-dir DIRECTORY --from-dir DIRECTORY --help
+Environment: MOTOK_VERSION, MOTOK_BIN_DIR, MOTOK_REPO, MOTOK_RELEASE_BASE_URL (mirror directory)
 Remote URLs must use HTTPS. Release artifacts are checked against SHA256SUMS.
 Windows users should extract the matching release ZIP and add motok.exe to PATH.
 HELP
@@ -28,6 +32,18 @@ while [ "$#" -gt 0 ]; do
     *) echo 'Unknown installer option; use --help.' >&2; exit 1 ;;
   esac
 done
+case "$repo" in ''|*[!A-Za-z0-9._/-]*|*/*/*|/*|*/) echo 'Invalid MOTOK_REPO; expected OWNER/NAME.' >&2; exit 1 ;; */*) ;; *) echo 'Invalid MOTOK_REPO; expected OWNER/NAME.' >&2; exit 1 ;; esac
+if [ "$version" = latest ]; then
+  if [ -n "$from_dir" ]; then echo 'Use --version with --from-dir.' >&2; exit 1; fi
+  if [ -n "$release_url" ]; then echo 'Use --version with MOTOK_RELEASE_BASE_URL.' >&2; exit 1; fi
+  command -v curl >/dev/null 2>&1 || { echo 'curl is required to download releases.' >&2; exit 1; }
+  # GitHub redirects /releases/latest to /releases/tag/<tag>; no API token or rate limit involved.
+  latest_url=$(curl --fail --silent --show-error --location --proto '=https' --proto-redir '=https' \
+    --output /dev/null --write-out '%{url_effective}' "https://github.com/$repo/releases/latest") \
+    || { echo 'Cannot resolve the latest release; pass --version.' >&2; exit 1; }
+  version=${latest_url##*/releases/tag/}
+  [ "$version" != "$latest_url" ] || { echo "No published release found for $repo; pass --version." >&2; exit 1; }
+fi
 case "$version" in ''|*[!A-Za-z0-9._-]*) echo 'Invalid version.' >&2; exit 1 ;; esac
 case "$(uname -s)" in Darwin) target_os=darwin ;; Linux) target_os=linux ;; *) echo 'Unsupported OS; use a release archive.' >&2; exit 1 ;; esac
 case "$(uname -m)" in x86_64|amd64) target_arch=amd64 ;; arm64|aarch64) target_arch=arm64 ;; *) echo 'Unsupported CPU architecture.' >&2; exit 1 ;; esac
@@ -46,7 +62,8 @@ if [ -n "$from_dir" ]; then
   cp "$from_dir/$archive" "$install_tmp/$archive"
   cp "$from_dir/SHA256SUMS" "$install_tmp/SHA256SUMS"
 else
-  case "$release_url" in https://*) ;; *) echo 'Set MOTOK_RELEASE_BASE_URL to an HTTPS release directory, or use --from-dir.' >&2; exit 1 ;; esac
+  if [ -z "$release_url" ]; then release_url="https://github.com/$repo/releases/download/$version"; fi
+  case "$release_url" in https://*) ;; *) echo 'MOTOK_RELEASE_BASE_URL must be an HTTPS release directory.' >&2; exit 1 ;; esac
   command -v curl >/dev/null 2>&1 || { echo 'curl is required to download releases.' >&2; exit 1; }
   release_url=${release_url%/}
   curl --fail --silent --show-error --location --proto '=https' --proto-redir '=https' \
@@ -76,4 +93,5 @@ chmod 755 "$staged_binary"
 mv -f "$staged_binary" "$bin_dir/motok"
 staged_binary=
 echo "Installed motok $version in $bin_dir."
-case ":${PATH:-}:" in *":$bin_dir:"*) ;; *) echo 'Add this directory to PATH to run motok.' ;; esac
+case ":${PATH:-}:" in *":$bin_dir:"*) ;; *) echo "Add $bin_dir to PATH to run motok, for example:"; echo "  echo 'export PATH=\"$bin_dir:\$PATH\"' >> ~/.zshrc" ;; esac
+echo 'Next: export MOTOK_API_KEY=... then run: motok init && motok login'

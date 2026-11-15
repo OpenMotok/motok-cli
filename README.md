@@ -6,28 +6,46 @@ Inspired by [flatkey-cli](https://github.com/flatkey-ai/flatkey-cli).
 
 [简体中文](README.zh-CN.md)
 
-## Build and install
+## Install
 
-Development requires Go 1.26.1 or later. Run from this directory:
+Install the latest release on macOS or Linux (no Go, no sudo; installs to `~/.local/bin`):
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/OpenMotok/motok-cli/main/install.sh | sh
+```
+
+Pick a version or destination:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/OpenMotok/motok-cli/main/install.sh | sh -s -- --version v0.1.0 --bin-dir ~/bin
+```
+
+The installer downloads the matching archive from
+[GitHub Releases](https://github.com/OpenMotok/motok-cli/releases) over HTTPS and
+verifies it against `SHA256SUMS`; a failed check never replaces an installed binary.
+`MOTOK_VERSION` and `MOTOK_BIN_DIR` adjust defaults. `MOTOK_RELEASE_BASE_URL`
+points to a self-hosted mirror directory (requires `--version`). If the destination
+is not on PATH, the installer prints how to add it.
+
+Windows users download the matching ZIP from Releases, verify it against
+`SHA256SUMS`, and add the directory containing `motok.exe` to PATH.
+
+After installing:
+
+```sh
+export MOTOK_API_KEY=your-key   # add to ~/.zshrc or ~/.bashrc
+motok init
+motok login
+```
+
+## Development and releases
+
+Development requires Go 1.26.1 or later:
 
 ```sh
 go build -trimpath -o bin/motok ./cmd/motok
 ./bin/motok help
 ```
-
-Release users download a prebuilt binary; Go is not required. macOS and Linux:
-
-```sh
-MOTOK_RELEASE_BASE_URL=https://your-release-host/v0.1.0 sh install.sh --version v0.1.0
-```
-
-The URL must point to your real release directory containing the matching archive
-and `SHA256SUMS`. A public release host is not configured or published by this
-project. The installer downloads over HTTPS, verifies SHA-256 and installs to the
-user's local bin directory without sudo. Use `--bin-dir` or `MOTOK_BIN_DIR` to
-change the destination. Add that directory to PATH if needed. Windows users
-extract the matching ZIP, verify its SHA-256 against `SHA256SUMS`, and add
-`motok.exe` to PATH.
 
 Build all release archives and install one locally:
 
@@ -37,11 +55,13 @@ sh install.sh --from-dir ./dist --version v0.1.0
 motok --version
 ```
 
-The release builder produces macOS, Linux and Windows archives for AMD64 and
-ARM64, plus `SHA256SUMS`. It requires `tar`, `zip` and either `sha256sum` or
-`shasum`. Publish these files and `install.sh` to your own release host. The
-installer also requires `curl` for remote installations. SHA-256 detects damaged
-or mismatched artifacts; the release host remains the trust source.
+To publish a release, push a `v*` tag. GitHub Actions runs the tests, builds macOS,
+Linux and Windows archives for AMD64 and ARM64, and publishes them with
+`SHA256SUMS` and `install.sh` as a GitHub Release.
+
+```sh
+git tag v0.1.0 && git push origin v0.1.0
+```
 
 ## Channels and capability routes
 
