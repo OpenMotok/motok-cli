@@ -4,6 +4,9 @@ import "strings"
 
 func chineseError(e *cliError) string {
 	messages := map[string]string{
+		"asset_purpose_invalid":  "素材用途必须为 reference 或 virtual_portrait；虚拟人像仅适用于图片。",
+		"assets_unsupported":     "素材命令需要 Motok 平台连接，不支持官方直连服务。",
+		"asset_file_invalid":     "素材必须为 PNG、JPEG、WebP（最多 8 MiB）或 MP4、MOV（最多 50 MiB）。",
 		"config_path":            "无法确定用户配置目录。",
 		"config_read":            "无法读取配置文件。",
 		"config_write":           "无法写入配置文件。",
@@ -46,6 +49,9 @@ func chineseError(e *cliError) string {
 		"language_invalid":       "语言必须为 en 或 zh。",
 		"command_unknown":        "未知命令，请使用 motok help 查看用法。",
 		"operation_failed":       "操作失败。",
+	}
+	if e.Code == "asset_purpose_save_failed" {
+		return "文件已上传，用途保存失败；请使用 assets update 重试，素材 ID：" + e.AssetID
 	}
 	if e.Code == "api_error" {
 		return "API 请求失败（" + e.Message + "）"

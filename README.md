@@ -27,8 +27,17 @@ verifies it against `SHA256SUMS`; a failed check never replaces an installed bin
 points to a self-hosted mirror directory (requires `--version`). If the destination
 is not on PATH, the installer prints how to add it.
 
-Windows users download the matching ZIP from Releases, verify it against
-`SHA256SUMS`, and add the directory containing `motok.exe` to PATH.
+Windows PowerShell (no administrator privileges required):
+
+```powershell
+irm https://raw.githubusercontent.com/OpenMotok/motok-cli/main/install.ps1 | iex
+```
+
+The Windows installer detects AMD64/ARM64, verifies SHA-256, installs to
+`%LOCALAPPDATA%\Programs\Motok\bin` and updates the user PATH. Use `-Version`,
+`-BinDir` or `-FromDir` when invoking a downloaded script. `-NoPathUpdate` skips
+persistent PATH changes. After installation, run `motok init` and configure your
+API URL, key and models.
 
 After installing:
 
@@ -57,7 +66,7 @@ motok --version
 
 To publish a release, push a `v*` tag. GitHub Actions runs the tests, builds macOS,
 Linux and Windows archives for AMD64 and ARM64, and publishes them with
-`SHA256SUMS` and `install.sh` as a GitHub Release.
+`SHA256SUMS`, `install.sh` and `install.ps1` as a GitHub Release.
 
 ```sh
 git tag v0.1.0 && git push origin v0.1.0
@@ -277,3 +286,28 @@ Channel configuration uses `protocol` only; omitted values default to `openai`.
 The former `provider` field is rejected as an unknown field.
 
 `motok config path` prints the selected absolute configuration file path without reading its contents. It also works before initialization or when the file is malformed. Add `--json` for machine-readable output.
+
+### Platform assets
+
+Asset commands use Motok platform endpoints, not official providers' Files APIs.
+They default to `routes.video`; use `--type image` to select `routes.image`.
+Configure the route with your Motok API URL and key. No model is required.
+
+```sh
+motok assets upload ./character.png --purpose virtual_portrait
+motok assets list --kind image
+motok assets list --before ASSET_ID
+motok assets show ASSET_ID
+motok assets update ASSET_ID --purpose reference
+```
+
+Uploads accept PNG/JPEG/WebP up to 8 MiB and MP4/MOV up to 50 MiB. Purpose is
+`reference` or `virtual_portrait` (images only). Uploading with a purpose first
+uploads the file, then saves its purpose; if saving fails, the error includes the
+uploaded ID so `assets update` can retry without another upload. Lists retain
+`next_cursor`; pass it as `--before`. `--json` and `--dry-run` are supported.
+
+Use `asset://ASSET_ID` in a video request's image URL through `motok request POST
+/videos --type video --data request.json`. Saved virtual-portrait purpose is
+applied automatically by Motok. Asset IDs are scoped to your Motok account and
+cannot be sent directly to official providers.

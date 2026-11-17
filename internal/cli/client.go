@@ -14,6 +14,7 @@ import (
 )
 
 type cliError struct {
+	AssetID string `json:"asset_id,omitempty"`
 	Code    string `json:"code"`
 	Message string `json:"message"`
 	Status  int    `json:"status,omitempty"`

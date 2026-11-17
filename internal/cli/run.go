@@ -21,6 +21,7 @@ type options struct {
 	timeout, poll                                           time.Duration
 	maxTokens                                               int
 	seconds                                                 string
+	purpose, before, assetKind                              string
 }
 type app struct {
 	in          io.Reader
@@ -70,6 +71,9 @@ func (a *app) parse(args []string) ([]string, error) {
 	f.StringVar(&a.opts.output, "o", "", "output file")
 	f.StringVar(&a.opts.data, "data", "", "JSON file; - reads stdin")
 	f.StringVar(&a.opts.file, "file", "", "reference image")
+	f.StringVar(&a.opts.purpose, "purpose", "", "reference or virtual_portrait")
+	f.StringVar(&a.opts.before, "before", "", "asset pagination cursor")
+	f.StringVar(&a.opts.assetKind, "kind", "", "image or video asset filter")
 	f.StringVar(&a.opts.size, "size", "", "image or video size")
 	f.StringVar(&a.opts.seconds, "seconds", "", "video duration")
 	f.IntVar(&a.opts.maxTokens, "max-tokens", 1024, "maximum output tokens")
@@ -215,6 +219,10 @@ func (a *app) run(ctx context.Context, cmd []string) error {
 			inferred = "image"
 		case "video":
 			inferred = "video"
+		case "assets":
+			if kind == "" {
+				inferred = "video"
+			}
 		}
 	}
 	if inferred != "" {
@@ -239,6 +247,12 @@ func (a *app) run(ctx context.Context, cmd []string) error {
 	}
 	ctx, cancel := context.WithTimeout(ctx, a.opts.timeout)
 	defer cancel()
+	if len(cmd) > 0 && cmd[0] == "assets" {
+		return a.assets(ctx, cmd[1:])
+	}
+	if a.opts.purpose != "" || a.opts.before != "" || a.opts.assetKind != "" {
+		return failure("option_invalid", "asset options require an assets command")
+	}
 	switch command {
 	case "models", "status":
 		if a.opts.dryRun {
@@ -317,7 +331,7 @@ func (a *app) help() error {
 	}
 
 	if a.opts.json || a.opts.ai {
-		return a.print(map[string]any{"name": "motok", "version": Version, "commands": []string{"init", "config init", "config path", "config show", "auth status", "status", "models", "text generate", "response generate", "image generate", "image edit", "video generate", "video status ID", "video download ID", "request METHOD /endpoint"}, "auth": "Configuration file and environment variables only; no credentials in command flags.", "options": []string{"--type text|image|video", "--model ID", "--prompt TEXT|-", "--output FILE", "--file FILE", "--data FILE|-", "--size SIZE", "--seconds N", "--wait", "--poll-interval 10s", "--timeout 10m", "--json", "--dry-run", "--lang en|zh"}}, "")
+		return a.print(map[string]any{"name": "motok", "version": Version, "commands": []string{"init", "config init", "config path", "config show", "auth status", "status", "models", "text generate", "response generate", "image generate", "image edit", "video generate", "video status ID", "video download ID", "request METHOD /endpoint", "assets upload FILE", "assets list", "assets show ID", "assets update ID --purpose reference|virtual_portrait"}, "auth": "Configuration file and environment variables only; no credentials in command flags.", "options": []string{"--type text|image|video", "--model ID", "--prompt TEXT|-", "--output FILE", "--file FILE", "--data FILE|-", "--size SIZE", "--seconds N", "--wait", "--poll-interval 10s", "--timeout 10m", "--json", "--dry-run", "--lang en|zh", "--purpose reference|virtual_portrait", "--kind image|video", "--before CURSOR"}}, "")
 	}
 	text := `Motok.ai CLI — direct official APIs and compatible gateways
 
@@ -335,6 +349,10 @@ func (a *app) help() error {
   motok video generate --prompt "A cat" --wait -o cat.mp4
   motok video status TASK_ID
   motok video download TASK_ID -o cat.mp4
+  motok assets upload ./character.png --purpose virtual_portrait
+  motok assets list --kind image
+  motok assets show ASSET_ID
+  motok assets update ASSET_ID --purpose reference
   motok request POST /embeddings --data request.json --json
 
 Configuration: MOTOK_CONFIG or the user config directory / motok / config.yaml.
@@ -342,6 +360,7 @@ Keys and URLs come only from config and environment. Commands select channels au
 Protocols: openai (also Motok.ai / compatible services), anthropic, gemini.
 Set a model on a route/channel or use --model. Model availability depends on the service.
 Options: --type text|image|video --json --dry-run --lang en|zh --timeout 10m
+Assets: Motok platform endpoints only; defaults to routes.video, or use --type image.
 Video options: --seconds N --size WIDTHxHEIGHT --wait --poll-interval 10s
 --prompt - and --data - read standard input. Output files are never overwritten.
 Use motok help --ai for machine-readable command discovery.
@@ -363,6 +382,10 @@ Use motok help --ai for machine-readable command discovery.
   motok video generate --prompt "一只猫" --wait -o cat.mp4
   motok video status TASK_ID
   motok video download TASK_ID -o cat.mp4
+  motok assets upload ./character.png --purpose virtual_portrait
+  motok assets list --kind image
+  motok assets show ASSET_ID
+  motok assets update ASSET_ID --purpose reference
   motok request POST /embeddings --data request.json --json
 
 配置路径：MOTOK_CONFIG 或用户配置目录中的 motok/config.yaml。
@@ -370,6 +393,7 @@ API Key 和 URL 仅从配置文件与环境变量读取，通过 routes.text/ima
 协议：openai（含 Motok.ai 和兼容服务）、anthropic、gemini。
 模型在 routes 或 channels 中设置，或使用 --model；可用能力取决于实际服务。
 选项：--type text|image|video --json --dry-run --lang en|zh --timeout 10m
+素材：仅支持 Motok 平台接口，默认使用 routes.video，可用 --type image 切换。
 视频：--seconds N --size WIDTHxHEIGHT --wait --poll-interval 10s
 --prompt -、--data - 从标准输入读取；输出文件不会覆盖已有文件。
 使用 motok help --ai 获取机器可读说明。

@@ -20,7 +20,7 @@ curl -fsSL https://raw.githubusercontent.com/OpenMotok/motok-cli/main/install.sh
 
 脚本从 [GitHub Releases](https://github.com/OpenMotok/motok-cli/releases) 下载对应平台的压缩包，通过 HTTPS 下载并核对 `SHA256SUMS`，校验失败不会替换已安装的版本。可用环境变量 `MOTOK_VERSION`、`MOTOK_BIN_DIR` 调整；`MOTOK_RELEASE_BASE_URL` 可指向自建镜像目录（需同时指定 `--version`）。若安装目录不在 PATH 中，脚本会提示如何加入。
 
-Windows 用户从 Releases 下载对应 ZIP，核对 `SHA256SUMS` 后将 `motok.exe` 所在目录加入 PATH。
+Windows 用户可使用 PowerShell 脚本一键安装，见下方 Windows PowerShell 安装说明。
 
 安装后：
 
@@ -47,7 +47,7 @@ sh install.sh --from-dir ./dist --version v0.1.0
 motok --version
 ```
 
-发布新版本：推送 `v*` 标签，GitHub Actions 会运行测试、构建 macOS / Linux / Windows 的 AMD64 和 ARM64 压缩包，并连同 `SHA256SUMS`、`install.sh` 发布为 GitHub Release。
+发布新版本：推送 `v*` 标签，GitHub Actions 会运行测试、构建 macOS / Linux / Windows 的 AMD64 和 ARM64 压缩包，并连同 `SHA256SUMS`、`install.sh`、`install.ps1` 发布为 GitHub Release。
 
 ```sh
 git tag v0.1.0 && git push origin v0.1.0
@@ -214,3 +214,35 @@ sh -n install.sh scripts/build-release.sh
 `motok init`（也可用 `motok config init`）生成单个 Motok 渠道及文字、图片、视频路由。图片路由默认使用 Seedream 5.5（`dola-seedream-5-5-261028`），视频路由默认使用 Seedance 2.0 Mini（`dreamina-seedance-2-0-mini-260615`），文字模型 ID 需自行填写。初始化时如已设置 `MOTOK_API_KEY`，渠道会写入 `api_key_env: MOTOK_API_KEY` 引用该变量，密钥本身不会写入文件；否则生成空的 `api_key` 供填写。已存在的文件不会被覆盖。初始化时如已设置 `MOTOK_BASE_URL`，会采用该地址，否则保留明确的地址占位符。
 
 `motok config path` 显示当前选中的配置文件完整路径，不读取文件内容；文件未创建或格式损坏时仍可使用。追加 `--json` 可获取 JSON 输出。
+
+## Windows PowerShell 安装
+
+```powershell
+irm https://raw.githubusercontent.com/OpenMotok/motok-cli/main/install.ps1 | iex
+```
+
+脚本自动识别 AMD64/ARM64、校验 SHA-256，安装到用户目录并更新用户 PATH，无需管理员权限。安装后运行 `motok init`，填写地址、密钥和模型。下载脚本后可通过 `-Version`、`-BinDir`、`-FromDir` 指定版本、安装目录或离线安装包；`-NoPathUpdate` 不修改用户 PATH。
+
+### 平台素材
+
+素材命令调用 Motok 平台接口，不是各官方服务的 Files API。
+默认使用 `routes.video`，可通过 `--type image` 使用 `routes.image`。
+对应渠道需要配置 Motok API 地址和密钥，无需配置模型。
+
+```sh
+motok assets upload ./character.png --purpose virtual_portrait
+motok assets list --kind image
+motok assets list --before ASSET_ID
+motok assets show ASSET_ID
+motok assets update ASSET_ID --purpose reference
+```
+
+图片支持 PNG/JPEG/WebP，最多 8 MiB；视频支持 MP4/MOV，最多 50 MiB。
+用途为 `reference`（普通参考）或 `virtual_portrait`（虚拟人像，仅图片）。
+带用途上传时，先上传文件再保存用途；保存失败会提示已上传素材 ID，
+可用 `assets update` 重试，无需重复上传。
+列表返回 `next_cursor`，通过 `--before` 查询下一页。支持 `--json` 和 `--dry-run`。
+
+视频请求的图片 URL 可填写 `asset://ASSET_ID`，再通过
+`motok request POST /videos --type video --data request.json` 提交。
+服务端自动读取已保存的虚拟人像用途。素材 ID 属于 Motok 账户，不能直接传给官方服务。
